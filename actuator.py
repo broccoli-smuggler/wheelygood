@@ -42,22 +42,21 @@ class MotorEncoder:
         GPIO.add_event_detect(self.B_PIN, GPIO.BOTH, callback=self.on_move)
         
     def on_move(self, _pin):
-            delta = self.get_delta()
-            if delta != 0:
-                print(delta)
-                
-            if delta == 1:
-                self.pos += 1
-                self._clockwise = True
-                
-            if delta == 2:
-                if self._clockwise:
-                    self.pos += 2
-                else:
-                    self.pos -= 2                  
-            if delta == 3:
-                self._clockwise = False 
-                self.pos -= 1         
+        delta = self.get_delta()
+        
+        if delta == 1:
+            self.pos += 1
+            self._clockwise = True
+            
+        if delta == 2:
+            if self._clockwise:
+                self.pos += 2
+            else:
+                self.pos -= 2                  
+        if delta == 3:
+            self._clockwise = False 
+            self.pos -= 1
+        print(self.pos)            
         
     def get_delta(self):
         seq = (GPIO.input(self.A_PIN) ^ GPIO.input(self.B_PIN)) | GPIO.input(self.B_PIN) << 1
