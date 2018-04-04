@@ -83,7 +83,8 @@ class Actuator:
     def reset_to_origin (self):
         self.mc.relay(['ls-down', 'gaa-in'])
         time.sleep(4)
-        self.me.set_to_origin()
+        self.encode1.set_to_origin()
+        self.encode2.set_to_origin()
     
     def move_time (self, t, commands):
         self.mc.relay(commands)
@@ -117,9 +118,9 @@ class Actuator:
 
 me = MotorEncoder(36, 37)
 
-print('go')
-while True:
-    continue;
+#print('go')
+#while True:
+    #continue;
 
 #GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 #PIO.add_event_detect(18, GPIO.BOTH, bouncetime=300)
