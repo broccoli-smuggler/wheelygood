@@ -1,67 +1,89 @@
-import actuator
+#import actuator
 import threading
+import time
+import random
 
 
 class State:
-    def __init__(self):
-        pass
+    def __init__(self, prior):
+        self.prior_s = prior
 
     def run(self):
         assert 0, "run not implemented"
 
-    def next(self, input):
+    def next(self):
         assert 0, "next not implemented"
+
+    def prior(self):
+        if self.prior_s:
+            return self.prior_s
+        else:
+            return self
 
 
 class Out(State):
     def run(self):
         print('out')
 
-    def next(self, input):
-        if input is StateMachine.Out:
-            return StateMachine.Out
-
-        return StateMachine.locate
+    def next(self):
+        return Locate(self)
 
 
 class Locate(State):
     def run(self):
-        print('out')
+        print('locate')
 
-    def next(self, input):
-        return StateMachine.locate
+    def next(self):
+        return Up(self)
 
 
 class Up(State):
     def run(self):
-        print('out')
+        print('up')
 
-    def next(self, input):
-        return StateMachine.locate
+    def next(self):
+        return In(self)
 
 
 class In(State):
     def run(self):
-        print('out')
+        print('in')
 
-    def next(self, input):
-        return StateMachine.locate
+    def next(self):
+        return Out(self)
+
+
+class Stop(State):
+    def run(self):
+        print('stop')
+
+    def next(self):
+        return Reset(self)
+
+
+class Reset(State):
+    def run(self):
+        print('reset')
+
+    def next(self):
+        return Out(self)
 
 
 class StateMachine:
     def __init__(self):
-        self.actuator = actuator.Actuator()
-
-        self.state_changes = ['out', 'locate', 'up', 'in']
-
-        self.states = {'reset': self.reset,
-                       'out': self.out,
-                       'locate': self.vision_locator,
-                       'up': self.up,
-                       'in': self.inside}
-
+        #self.actuator = actuator.Actuator()
         t = threading.Thread(target=self.mouse_thread)
-        t.start()
+        #t.start()
+
+        self.state = Reset(None)
+
+        while True:
+            self.state.run()
+            time.sleep(1)
+            if random.getrandbits(1):
+                self.state = self.state.prior()
+            else:
+                self.state = self.state.next()
 
     def mouse_thread(self):
         while True:
@@ -76,6 +98,7 @@ class StateMachine:
             button = ord(buf[0])
             return button & 0x1, (button & 0x4) > 0, (button & 0x2) > 0
 
+sm = StateMachine()
 
 # def mouse_event(event, x, y, flags, param):
 # cv2.namedWindow("click")
