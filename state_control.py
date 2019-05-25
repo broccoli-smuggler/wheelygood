@@ -4,7 +4,6 @@ import time
 import actuator
 
 
-
 class IStateContext(object):
     current_state = None
     action_chain = []
@@ -36,6 +35,11 @@ class IState(object):
 
 class IntoCar(IState):
     def run(self, state_object):
+        print("go into car")
+        self.running = True
+        x, y = state_object.actuator.get_position()
+        state_object.actuator.set_target(x, 100)
+        self.running = False
         print("into car")
 
     def next(self, state_object):
@@ -48,12 +52,13 @@ class IntoCar(IState):
 
 
 class OutCar(IState):
-    def run(self, state_objec):
-        print("     doing work out")
+    def run(self, state_object):
+        print("go out")
         self.running = True
-        time.sleep(3)
+        x, y = state_object.actuator.get_position()
+        state_object.actuator.set_target(x, y + 200)
         self.running = False
-        print("     out of car")
+        print("out of car")
 
     def next(self, state_object):
         if not self.running:
@@ -65,8 +70,12 @@ class OutCar(IState):
 
 
 class Locate(IState):
-    def run(self, state_objec):
-        print("locating chair")
+    def run(self, state_object):
+        print("locating chair (down)")
+        self.running = True
+        x, y = state_object.actuator.get_position()
+        state_object.actuator.set_target(x, y - 100)
+        self.running = False
 
     def next(self, state_object):
         if not self.running:
@@ -78,8 +87,13 @@ class Locate(IState):
 
 
 class Up(IState):
-    def run(self, state_objec):
+    def run(self, state_object):
         print("chair off floor")
+        self.running = True
+        x, y = state_object.actuator.get_position()
+        state_object.actuator.set_target(x, y + 100)
+        self.running = False
+        
 
     def next(self, state_object):
         if not self.running:
@@ -91,11 +105,12 @@ class Up(IState):
 
 
 class Stop(IState):
-    def run(self, state_objec):
+    def run(self, state_object):
         pass
 
     def action(self, state_object):
         print("stopped")
+        state_object.actuator.stop()
 
     def next(self, state_object):
         state_object.setState(state_object.before_stop)
