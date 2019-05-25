@@ -4,7 +4,6 @@ import time
 import actuator
 
 
-
 class IStateContext(object):
     current_state = None
     action_chain = []
@@ -115,7 +114,6 @@ class RoboChair(IStateContext):
         self.locate = Locate()
         self.up = Up()
         self.stop = Stop()
-        # self.reset_func()
         self.current_state = self.into_car
         self.before_stop = None
 
@@ -134,7 +132,8 @@ class RoboChair(IStateContext):
         self.current_state.action(self)
 
 
-rob = RoboChair()
+if __name__ == "__main__":
+    rob = RoboChair()
 
 
 def mouse_event(event, x, y, flags, param):
@@ -145,8 +144,6 @@ def mouse_event(event, x, y, flags, param):
     elif event == 5:
         rob.prior()
 
-
-if __name__ == "__main__":
     cv2.namedWindow("click")
     cv2.waitKey(1)
     cv2.destroyWindow("click")

@@ -13,7 +13,7 @@ while True:
     cv2.imshow('chair', frame)
 
     if start:
-        cv2.imwrite(data_folder + str(index) + 'chair.jpg', frame)
+        cv2.imwrite(data_folder + str(index) + 'chairNo2.jpg', frame)
         index += 1
         if index >= max_data:
             break
