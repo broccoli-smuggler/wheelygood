@@ -2,10 +2,12 @@ import threading
 import cv2
 import time
 import actuator
+import vision
 
 max_height = 4850
 resting_height = 4100
 max_out = 300000
+locate_height = 1590
 
 class IStateContext(object):
     current_state = None
@@ -81,11 +83,37 @@ class OutCar(IState):
 
 
 class Locate(IState):
+    def __init__(self):
+        self.vision = vision.VisionLocator()
+    
     def run(self, state_object):
-        print("locating chair (down)")
+        print("locating chair")
         self.running = True
+        state_object.actuator.go_out_end()
         x, y = state_object.actuator.get_position()
-        state_object.actuator.set_target(x - 50, y - 100)
+        # Move to chair height
+        state_object.actuator.set_target(x, locate_height)
+        
+        # The first X is fully out, thus we can't go any further than this
+        x_limit = x
+        print(x)
+        
+        dx = None
+        tolerence = 700
+        while not state_object.actuator.is_stopped():
+            time.sleep(0.03)
+            x, y = state_object.actuator.get_position()
+            dx = self.vision.get_chair_dx(True)
+            print(dx)
+            if dx is not None:
+                if x + dx > x_limit:
+                    print('chair too far')
+                else:
+                    if abs(dx) < tolerence:
+                        break
+                    state_object.actuator.set_target(x + dx, y)
+                    
+        print('Located!')
         self.running = False
 
     def next(self, state_object):
@@ -145,10 +173,8 @@ class RoboChair(IStateContext):
         self.locate = Locate()
         self.up = Up()
         self.stop = Stop()
-        # self.reset_func()
         self.current_state = self.into_car
         self.current_state.action(self)
-        
         self.before_stop = None
 
     def next(self):
@@ -167,7 +193,6 @@ class RoboChair(IStateContext):
 
 
 rob = RoboChair()
-
 
 def mouse_event(event, x, y, flags, param):
     if event == 6:
@@ -188,7 +213,7 @@ if __name__ == "__main__":
     cv2.setMouseCallback("click", mouse_event)
 
     while True:
-        cv2.waitKey(0)
-        time.sleep(0.3)
-
+        cv2.waitKey(1000)
+    
+    GPIO.cleanup()
 

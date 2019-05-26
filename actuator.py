@@ -114,6 +114,9 @@ class Actuator:
     def go (self):
         self.stop_flag = False
         
+    def is_stopped(self):
+        return self.stop_flag
+        
     def get_position(self):
         return self.encode_in_out.get_pos(), self.encode_up_down.get_pos()
         
@@ -123,7 +126,7 @@ class Actuator:
             
     def set_target(self, new_x, new_y):
         toly = 15
-        tolx = 1000
+        tolx = 800
                 
         first = True       
         while not self.stop_flag:
@@ -156,7 +159,7 @@ class Actuator:
                 self.mc.stop(False, True)
                 self.y_moving = False
                 
-            print('x %d, y %d' % (x, y))
+            #print('x %d, y %d' % (x, y))
             if (not self.x_moving and not self.y_moving) or self.stop_flag:
                 break
             
@@ -170,4 +173,3 @@ if __name__ =='__main__':
     a = Actuator()
     a.initialise_encoders()
 
-GPIO.cleanup()
