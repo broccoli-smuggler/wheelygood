@@ -3,6 +3,9 @@ import cv2
 import time
 import actuator
 
+max_height = 4850
+resting_height = 4100
+max_out = 300000
 
 class IStateContext(object):
     current_state = None
@@ -37,8 +40,13 @@ class IntoCar(IState):
     def run(self, state_object):
         print("go into car")
         self.running = True
+        # Go into car at current max height
         x, y = state_object.actuator.get_position()
-        state_object.actuator.set_target(x, 100)
+        state_object.actuator.set_target(x, max_height)
+        state_object.actuator.go_out_end(reverse=True)
+        
+        # Once in, go to resting position
+        state_object.actuator.set_target(0, resting_height)
         self.running = False
         print("into car")
 
@@ -56,7 +64,10 @@ class OutCar(IState):
         print("go out")
         self.running = True
         x, y = state_object.actuator.get_position()
-        state_object.actuator.set_target(x, y + 200)
+        # Go up before out
+        state_object.actuator.set_target(x, max_height)
+        state_object.actuator.go_out_end()
+        
         self.running = False
         print("out of car")
 
@@ -74,7 +85,7 @@ class Locate(IState):
         print("locating chair (down)")
         self.running = True
         x, y = state_object.actuator.get_position()
-        state_object.actuator.set_target(x, y - 100)
+        state_object.actuator.set_target(x - 50, y - 100)
         self.running = False
 
     def next(self, state_object):
@@ -91,7 +102,7 @@ class Up(IState):
         print("chair off floor")
         self.running = True
         x, y = state_object.actuator.get_position()
-        state_object.actuator.set_target(x, y + 100)
+        state_object.actuator.set_target(x, max_height)
         self.running = False
         
 
@@ -113,9 +124,11 @@ class Stop(IState):
         state_object.actuator.stop()
 
     def next(self, state_object):
+        state_object.actuator.go()
         state_object.setState(state_object.before_stop)
 
     def prior(self, state_object):
+        state_object.actuator.go()
         state_object.before_stop.prior(state_object)
 
     def stop(self, state_object):
@@ -125,6 +138,8 @@ class Stop(IState):
 class RoboChair(IStateContext):
     def __init__(self):
         self.actuator = actuator.Actuator()
+        self.actuator.initialise_encoders()
+        
         self.into_car = IntoCar()
         self.out = OutCar()
         self.locate = Locate()
@@ -132,6 +147,8 @@ class RoboChair(IStateContext):
         self.stop = Stop()
         # self.reset_func()
         self.current_state = self.into_car
+        self.current_state.action(self)
+        
         self.before_stop = None
 
     def next(self):
@@ -172,4 +189,6 @@ if __name__ == "__main__":
 
     while True:
         cv2.waitKey(0)
-        time.sleep(0.1)
+        time.sleep(0.3)
+
+

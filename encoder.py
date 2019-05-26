@@ -1,7 +1,8 @@
 import RPi.GPIO as GPIO
+import time
 
 class MotorEncoder:
-    ENC_IN_OUT = (23, 29)
+    ENC_IN_OUT = (3, 5)
     ENC_UP_DOWN = (33, 31)
     
     def __init__ (self, pin_a, pin_b):
@@ -44,3 +45,10 @@ class MotorEncoder:
     
     def get_pos(self):
         return self.pos
+    
+if __name__ == "__main__":
+    mc = MotorEncoder(*MotorEncoder.ENC_IN_OUT)
+    mc2 = MotorEncoder(*MotorEncoder.ENC_UP_DOWN)
+    while True:
+        print('inout %d, updown %d' % (mc.get_pos(), mc2.get_pos()))
+        time.sleep(0.1)

@@ -45,6 +45,24 @@ class MotorController:
             
     def execute_command(self, command):
         if command in self.commands_map:
-            print('Motor: ' + command)
+            #print('Motor: ' + command)
             for (pin_index, is_on) in self.commands_map[command]:
                 GPIO.output(self._pins[pin_index], not is_on)
+                
+if __name__ == '__main__':
+    mc = MotorController()
+    time.sleep(0.5)
+    mc.move_dx(go_out=False)
+    mc.move_dy(go_up=True)
+    time.sleep(5)
+    mc.stop()
+    time.sleep(1.5)
+    mc.move_dx(go_out=False)
+    time.sleep(1.5)
+    mc.stop()
+    time.sleep(0.5)
+    mc.move_dy(go_up=True)
+    time.sleep(1.5)
+    mc.move_dy(go_up=False)
+    time.sleep(1.5)
+    mc.stop(False, True)
