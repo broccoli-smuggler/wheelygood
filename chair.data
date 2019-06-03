@@ -1,5 +1,0 @@
-classes = 1
-train = data/chair_train.txt
-valid = data/chair_test.txt
-names = data/chair.names
-backup = backup/

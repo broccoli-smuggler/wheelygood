@@ -3,30 +3,6 @@ import RPi.GPIO as GPIO
 import time
 from encoder import MotorEncoder
 from controller import MotorController
-
-
-class LimitSwitch:
-    IN_OUT = 12
-    UP_DOWN = 26
-    
-    def __init__ (self, pin, actuator):
-        self.actuator = actuator
-        self.on = False
-        GPIO.setup(pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-        #GPIO.add_event_detect(pin, GPIO.RISING, bouncetime=1000, callback=self.callback_f)
-        
-    def callback_f(self, channel):
-        self.on = not self.on
-        if self.on:
-            if channel == self.IN_OUT:
-                self.actuator.mc.relay(['in-out-stop'])
-                self.actuator.encode_ls.set_to_origin()
-                print('limit in out')
-                
-            if channel == self.UP_DOWN:
-                self.actuator.mc.relay(['up-down-stop'])
-                self.actuator.encode_gaa.set_to_origin()
-                print('limit up down')
         
 class Actuator:
     def __init__ (self):
@@ -41,6 +17,8 @@ class Actuator:
         # Run the encoders in/down. Check the positions. If they haven't moved zero the encoders
         self.mc.move_dx(False)
         self.mc.move_dy(False)
+        current_x = -1
+        current_y = -1
         prior_x = self.encode_in_out.get_pos()
         prior_y = self.encode_up_down.get_pos()
         x_set = False
@@ -72,6 +50,7 @@ class Actuator:
     def go_up_end(self, reverse=False):
         if self.stop_flag: return
         self.mc.move_dy(not reverse)
+        current_y = -1
         prior_y = self.encode_up_down.get_pos()
         print('Going fully up' if not reverse else 'going fully down')
         
@@ -92,6 +71,7 @@ class Actuator:
         if self.stop_flag: return
         self.mc.move_dx(not reverse)
         prior_x = self.encode_in_out.get_pos()
+        current_x = -1
         print('Going fully out' if not reverse else 'going fully in')
         
         while not self.stop_flag:
@@ -126,7 +106,7 @@ class Actuator:
             
     def set_target(self, new_x, new_y):
         toly = 15
-        tolx = 800
+        tolx = 700
                 
         first = True       
         while not self.stop_flag:

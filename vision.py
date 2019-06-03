@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 class VisionLocator:
-    def __init__(self, cam_width=640, cam_height=480, threshold=0.85, cam=0, reference_image='cross.jpg', pixel_to_encoder=154):
+    def __init__(self, cam_width=640, cam_height=480, threshold=0.85, cam=0, reference_image='cross_b.jpg', pixel_to_encoder=154):
         self.template = cv2.imread(reference_image, 0)
         self.pixel_to_encoder = pixel_to_encoder
         self.cam_height = cam_height
@@ -12,14 +12,14 @@ class VisionLocator:
         self.capture = cv2.VideoCapture(cam)
         self.capture.open(cam)
         self.nones = 0
-        cv2.namedWindow('frame', 0)
     
     ''' Returns the dx position in frame percent.
     -1 return means not found
     to go out is positive. to go in negitive. return pixels to move frame'''
     def get_chair_dx(self, show_frame=False):
         dx = None
-        for _ in range(0, 10):
+        for i in range(0, 12):
+            # for some reason the frames read are delayed so we read a load of them
             ret, frame = self.capture.read()
         if frame is None:
             self.nones+=1
@@ -30,6 +30,12 @@ class VisionLocator:
             return dx
         h, w = (self.template.shape)
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+        gray = cv2.GaussianBlur(gray, (5,5), 0)
+        
+        #clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        #gray = clahe.apply(gray)
+        #gray = cv2.equalizeHist(gray)
+        
         res = cv2.matchTemplate(gray, self.template, cv2.TM_CCOEFF_NORMED)
         _, max, minl, maxl = cv2.minMaxLoc(res)
         print(max)
