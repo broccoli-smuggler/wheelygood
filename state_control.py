@@ -1,20 +1,23 @@
 import threading
-import cv2
 import time
+
+import cv2
+
 import actuator
-import vision
 import limit
+import vision
 
 max_height = 4850
 resting_height = 4100
 max_out = 300000
 locate_height = 1590
 
+
 class IStateContext(object):
     current_state = None
     action_chain = []
 
-    def setState(self, new_state):
+    def set_state(self, new_state):
         self.current_state = new_state
 
 
@@ -36,7 +39,7 @@ class IState(object):
         raise NotImplementedError()
 
     def stop(self, state_object):
-        state_object.setState(state_object.stop)
+        state_object.set_state(state_object.stop)
 
 
 class IntoCar(IState):
@@ -47,7 +50,7 @@ class IntoCar(IState):
         x, y = state_object.actuator.get_position()
         state_object.actuator.set_target(x, max_height)
         state_object.actuator.go_out_end(reverse=True)
-        
+
         # Once in, go to resting position
         state_object.actuator.set_target(0, resting_height)
         self.running = False
@@ -55,11 +58,11 @@ class IntoCar(IState):
 
     def next(self, state_object):
         if not self.running:
-            state_object.setState(state_object.out)
+            state_object.set_state(state_object.out)
 
     def prior(self, state_object):
         if not self.running:
-            state_object.setState(state_object.up)
+            state_object.set_state(state_object.up)
 
 
 class IntoCarNoChair(IState):
@@ -73,11 +76,12 @@ class IntoCarNoChair(IState):
 
     def next(self, state_object):
         if not self.running:
-            state_object.setState(state_object.out_no_chair)
+            state_object.set_state(state_object.out_no_chair)
 
     def prior(self, state_object):
         if not self.running:
-            state_object.setState(state_object.down)
+            state_object.set_state(state_object.down)
+
 
 class OutCar(IState):
     def run(self, state_object):
@@ -87,17 +91,17 @@ class OutCar(IState):
         # Go up before out
         state_object.actuator.set_target(x, max_height)
         state_object.actuator.go_out_end()
-        
+
         self.running = False
         print("out of car")
 
     def next(self, state_object):
         if not self.running:
-            state_object.setState(state_object.down)
+            state_object.set_state(state_object.down)
 
     def prior(self, state_object):
         if not self.running:
-            state_object.setState(state_object.into_car)
+            state_object.set_state(state_object.into_car)
 
 
 class OutCarNoChair(IState):
@@ -106,17 +110,17 @@ class OutCarNoChair(IState):
         self.running = True
         x, y = state_object.actuator.get_position()
         state_object.actuator.go_out_end()
-        
+
         self.running = False
         print("out of car")
 
     def next(self, state_object):
         if not self.running:
-            state_object.setState(state_object.locate)
+            state_object.set_state(state_object.locate)
 
     def prior(self, state_object):
         if not self.running:
-            state_object.setState(state_object.into_car_no_chair)
+            state_object.set_state(state_object.into_car_no_chair)
 
 
 class Down(IState):
@@ -132,16 +136,17 @@ class Down(IState):
 
     def next(self, state_object):
         if not self.running:
-            state_object.setState(state_object.into_car_no_chair)
+            state_object.set_state(state_object.into_car_no_chair)
 
     def prior(self, state_object):
         if not self.running:
-            state_object.setState(state_object.out)
+            state_object.set_state(state_object.out)
+
 
 class Locate(IState):
     def __init__(self):
         self.vision = vision.VisionLocator()
-    
+
     def run(self, state_object):
         print("locating chair")
         self.running = True
@@ -149,11 +154,11 @@ class Locate(IState):
         x, y = state_object.actuator.get_position()
         # Move to chair height
         state_object.actuator.set_target(x, locate_height)
-        
+
         # The first X is fully out, thus we can't go any further than this
         x_limit = x
         print(x)
-        
+
         dx = None
         tolerence = 800
         while not state_object.actuator.is_stopped():
@@ -168,16 +173,16 @@ class Locate(IState):
                     if abs(dx) < tolerence:
                         print('Located!')
                         break
-                    state_object.actuator.set_target(x + dx, y)        
+                    state_object.actuator.set_target(x + dx, y)
         self.running = False
 
     def next(self, state_object):
         if not self.running:
-            state_object.setState(state_object.up)
+            state_object.set_state(state_object.up)
 
     def prior(self, state_object):
         if not self.running:
-            state_object.setState(state_object.out_no_chair)
+            state_object.set_state(state_object.out_no_chair)
 
 
 class Up(IState):
@@ -188,15 +193,14 @@ class Up(IState):
         state_object.actuator.set_target(x, max_height)
         state_object.actuator.go_out_end()
         self.running = False
-        
 
     def next(self, state_object):
         if not self.running:
-            state_object.setState(state_object.into_car)
+            state_object.set_state(state_object.into_car)
 
     def prior(self, state_object):
         if not self.running:
-            state_object.setState(state_object.locate)
+            state_object.set_state(state_object.locate)
 
 
 class Stop(IState):
@@ -210,7 +214,7 @@ class Stop(IState):
     def next(self, state_object):
         state_object.actuator.go()
         print(state_object.before_stop)
-        state_object.setState(state_object.before_stop)
+        state_object.set_state(state_object.before_stop)
 
     def prior(self, state_object):
         state_object.actuator.go()
@@ -227,7 +231,7 @@ class RoboChair(IStateContext):
         self.actuator.initialise_encoders()
         self.limit_switch = limit.LimitSwitch(limit.LimitSwitch.OUT)
         self.limit_switch.set_callback(self.limit_callback)
-        
+
         self.out_limit = False
         self.into_car = IntoCar()
         self.into_car_no_chair = IntoCarNoChair()
@@ -240,7 +244,7 @@ class RoboChair(IStateContext):
         self.current_state = self.into_car_no_chair
         self.current_state.action(self)
         self.before_stop = None
-        
+
     def limit_callback(self, is_on):
         print("out limit hit!" if is_on else "out limit off")
         self.out_limit = is_on
@@ -266,6 +270,7 @@ class RoboChair(IStateContext):
 
 rob = RoboChair()
 
+
 def mouse_event(event, x, y, flags, param):
     if event == 6:
         rob.stop_func()
@@ -288,6 +293,5 @@ if __name__ == "__main__":
 
     while True:
         cv2.waitKey(10)
-    
-    GPIO.cleanup()
 
+    GPIO.cleanup()
